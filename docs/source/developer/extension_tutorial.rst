@@ -332,10 +332,10 @@ code:
         
         let header = document.createElement('h1');
         header.innerText = "Tapis v2 Tenants API";
-        content.node.appendChild(header);
+        //content.node.appendChild(header);
     
         let summary = document.createElement('table');
-        content.node.appendChild(summary);
+        //content.node.appendChild(summary);
     
         const response = await fetch(`https://api.tacc.utexas.edu/tenants/`);
         if (!response.ok) {
@@ -409,93 +409,70 @@ carry on.
 .. code-block:: bash
 
     git add package.json src/index.ts
-    git commit -m 'Show Astronomy Picture command in palette'
+    git commit -m 'Tapis Tenants command in palette'
 
 Show a picture in the panel
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You now have an empty panel. It's time to add a picture to it. Go back to
-your code editor. Add the following code below the lines that create a
-``MainAreaWidget`` instance and above the lines that define the command.
+your code editor. Uncomment the following code.
 
 .. code-block:: typescript
+       
+    content.node.appendChild(header);    
+    let summary = document.createElement('table');
+    
+    content.node.appendChild(summary);
 
-        // Add an image element to the content
-        let img = document.createElement('img');
-        content.node.appendChild(img);
 
-        // Get a random date string in YYYY-MM-DD format
-        function randomDate() {
-          const start = new Date(2010, 1, 1);
-          const end = new Date();
-          const randomDate = new Date(start.getTime() + Math.random()*(end.getTime() - start.getTime()));
-          return randomDate.toISOString().slice(0, 10);
-        }
-
-        // Fetch info about a random picture
-        const response = await fetch(`https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date=${randomDate()}`);
-        const data = await response.json() as APODResponse;
-
-        if (data.media_type === 'image') {
-          // Populate the image
-          img.src = data.url;
-          img.title = data.title;
-        } else {
-          console.log('Random APOD was not a picture.');
-        }
-
-The first two lines create a new HTML ``<img>`` element and add it to
-the widget DOM node. The next lines define a function get a random date in the form ``YYYY-MM-DD`` format, and then the function is used to make a request using the HTML
-`fetch <https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch>`__
-API that returns information about the Astronomy Picture of the Day for that date. Finally, we set the
-image source and title attributes based on the response.
-
-Now define the ``APODResponse`` type that was introduced in the code above. Put
+Now define the ``TenantsResponse`` type and the other types required to use the response. Put
 this definition just under the imports at the top of the file.
 
 .. code-block:: typescript
 
-        interface APODResponse {
-          copyright: string;
-          date: string;
-          explanation: string;
-          media_type: 'video' | 'image';
-          title: string;
-          url: string;
-        };
+    interface TenantsResponse {
+      status: string;
+      message: string;
+      result?: (ResultEntity)[] | null;
+      version: string;
+    }
+    interface ResultEntity {
+      id: string;
+      name: string;
+      baseUrl: string;
+      code: string;
+      contact?: (ContactEntity)[] | null;
+      _links: Links;
+    }
+    interface ContactEntity {
+      name: string;
+      email: string;
+      url: string;
+      type: string;
+      primary: boolean;
+    }
+    interface Links {
+      self: SelfOrPublickey;
+      publickey: SelfOrPublickey;
+    }
+    interface SelfOrPublickey {
+      href: string;
+    }
 
-And update the ``activate`` method to be ``async`` since we are now using
-``await`` in the method body.
-
-.. code-block:: typescript
-
-        activate: async (app: JupyterFrontEnd, palette: ICommandPalette) =>
 
 Rebuild your extension if necessary (``jlpm run build``), refresh your browser
-tab, and run the *Random Astronomy Picture* command again. You should now see a
-picture in the panel when it opens (if that random date had a picture and not a
-video).
+tab, and run the *Tapis Tenants* command again. You should now see your Tapis Tenants table populated.
 
-.. figure:: extension_tutorial_single.png
+.. figure:: extension_tutorial_complete.png
    :align: center
    :class: jp-screenshot
 
-   The in-progress extension, showing the `Astronomy Picture of the Day for 19 Jan 2014 <https://apod.nasa.gov/apod/ap140119.html>`__.
-
-Note that the image is not centered in the panel nor does the panel
-scroll if the image is larger than the panel area. Also note that the
-image does not update no matter how many times you close and reopen the
-panel. You'll address both of these problems in the upcoming sections.
-
-If you don't see a image at all, compare your code with the
-`02-show-an-image
-tag <https://github.com/jupyterlab/jupyterlab_apod/tree/3.0-02-show-an-image>`__
-in the reference project. When it's working, make another git commit.
+When it's working, make another git commit.
 
 .. code:: bash
 
     git add src/index.ts
-    git commit -m 'Show a picture in the panel'
+    git commit -m 'Show Tapis Tenants in the panel'
 
 Improve the widget behavior
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -508,7 +485,7 @@ Add the following lines to it.
 
 .. code-block:: css
 
-    .my-apodWidget {
+    .tapis-v2-tenants-widget {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -522,392 +499,7 @@ field pointing to it. In general, you should import all of your styles into a
 single CSS file, such as this ``index.css`` file, and put the path to that CSS
 file in the ``package.json`` file ``style`` field.
 
-Return to the ``index.ts`` file. Modify the ``activate``
-function to apply the CSS classes, the copyright information, and error handling
-for the API response.
-The beginning of the function should read like the following:
-
-.. code-block:: typescript
-      :emphasize-lines: 6,16-17,28-50
-
-      activate: async (app: JupyterFrontEnd, palette: ICommandPalette) => {
-        console.log('JupyterLab extension jupyterlab_apod is activated!');
-
-        // Create a blank content widget inside of a MainAreaWidget
-        const content = new Widget();
-        content.addClass('my-apodWidget'); // new line
-        const widget = new MainAreaWidget({content});
-        widget.id = 'apod-jupyterlab';
-        widget.title.label = 'Astronomy Picture';
-        widget.title.closable = true;
-
-        // Add an image element to the content
-        let img = document.createElement('img');
-        content.node.appendChild(img);
-
-        let summary = document.createElement('p');
-        content.node.appendChild(summary);
-
-        // Get a random date string in YYYY-MM-DD format
-        function randomDate() {
-          const start = new Date(2010, 1, 1);
-          const end = new Date();
-          const randomDate = new Date(start.getTime() + Math.random()*(end.getTime() - start.getTime()));
-          return randomDate.toISOString().slice(0, 10);
-        }
-
-        // Fetch info about a random picture
-        const response = await fetch(`https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date=${randomDate()}`);
-        if (!response.ok) {
-          const data = await response.json();
-          if (data.error) {
-            summary.innerText = data.error.message;
-          } else {
-            summary.innerText = response.statusText;
-          }
-        } else {
-          const data = await response.json() as APODResponse;
-
-          if (data.media_type === 'image') {
-            // Populate the image
-            img.src = data.url;
-            img.title = data.title;
-            summary.innerText = data.title;
-            if (data.copyright) {
-              summary.innerText += ` (Copyright ${data.copyright})`;
-            }
-          } else {
-            summary.innerText = 'Random APOD fetched was not an image.';
-          }
-        }
-
-      // Keep all the remaining command lines the same
-      // as before from here down ...
-
-Build your extension if necessary (``jlpm run build``) and refresh your
-JupyterLab browser tab. Invoke the *Random Astronomy Picture* command and
-confirm the image is centered with the copyright information below it. Resize
-the browser window or the panel so that the image is larger than the
-available area. Make sure you can scroll the panel over the entire area
-of the image.
-
-If anything is not working correctly, compare your code with the reference project
-`03-style-and-attribute
-tag <https://github.com/jupyterlab/jupyterlab_apod/tree/3.0-03-style-and-attribute>`__.
-When everything is working as expected, make another commit.
-
-.. code:: bash
-
-    git add style/index.css src/index.ts
-    git commit -m 'Add styling, attribution, error handling'
-
-Show a new image on demand
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The ``activate`` function has grown quite long, and there's still more
-functionality to add. Let's refactor the code into two separate
-parts:
-
-1. An ``APODWidget`` that encapsulates the Astronomy Picture panel elements,
-   configuration, and soon-to-be-added update behavior
-2. An ``activate`` function that adds the widget instance to the UI and
-   decide when the picture should refresh
-
-Start by refactoring the widget code into the new ``APODWidget`` class.
-Add the following additional import to the top of the file.
-
-.. code-block:: typescript
-
-    import { Message } from '@lumino/messaging';
-
-Install this dependency:
-
-.. code:: bash
-
-    jlpm add @lumino/messaging
-
-
-Then add the class just below the definition of ``APODResponse`` in the ``index.ts``
-file.
-
-.. code-block:: typescript
-
-    class APODWidget extends Widget {
-      /**
-      * Construct a new APOD widget.
-      */
-      constructor() {
-        super();
-
-        this.addClass('my-apodWidget');
-
-        // Add an image element to the panel
-        this.img = document.createElement('img');
-        this.node.appendChild(this.img);
-
-        // Add a summary element to the panel
-        this.summary = document.createElement('p');
-        this.node.appendChild(this.summary);
-      }
-
-      /**
-      * The image element associated with the widget.
-      */
-      readonly img: HTMLImageElement;
-
-      /**
-      * The summary text element associated with the widget.
-      */
-      readonly summary: HTMLParagraphElement;
-
-      /**
-      * Handle update requests for the widget.
-      */
-      async onUpdateRequest(msg: Message): Promise<void> {
-
-        const response = await fetch(`https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date=${this.randomDate()}`);
-
-        if (!response.ok) {
-          const data = await response.json();
-          if (data.error) {
-            this.summary.innerText = data.error.message;
-          } else {
-            this.summary.innerText = response.statusText;
-          }
-          return;
-        }
-
-        const data = await response.json() as APODResponse;
-
-        if (data.media_type === 'image') {
-          // Populate the image
-          this.img.src = data.url;
-          this.img.title = data.title;
-          this.summary.innerText = data.title;
-          if (data.copyright) {
-            this.summary.innerText += ` (Copyright ${data.copyright})`;
-          }
-        } else {
-          this.summary.innerText = 'Random APOD fetched was not an image.';
-        }
-      }
-
-      /**
-      * Get a random date string in YYYY-MM-DD format.
-      */
-      randomDate(): string {
-        const start = new Date(2010, 1, 1);
-        const end = new Date();
-        const randomDate = new Date(start.getTime() + Math.random()*(end.getTime() - start.getTime()));
-        return randomDate.toISOString().slice(0, 10);
-      }
-    }
-
-You've written all of the code before. All you've done is restructure it
-to use instance variables and move the image request to its own
-function.
-
-Next move the remaining logic in ``activate`` to a new, top-level
-function just below the ``APODWidget`` class definition. Modify the code
-to create a widget when one does not exist in the main JupyterLab area
-or to refresh the image in the existing widget when the command runs again.
-The code for the ``activate`` function should read as follows after
-these changes:
-
-.. code-block:: typescript
-
-    /**
-    * Activate the APOD widget extension.
-    */
-    function activate(app: JupyterFrontEnd, palette: ICommandPalette) {
-      console.log('JupyterLab extension jupyterlab_apod is activated!');
-
-      // Create a single widget
-      const content = new APODWidget();
-      const widget = new MainAreaWidget({content});
-      widget.id = 'apod-jupyterlab';
-      widget.title.label = 'Astronomy Picture';
-      widget.title.closable = true;
-
-      // Add an application command
-      const command: string = 'apod:open';
-      app.commands.addCommand(command, {
-        label: 'Random Astronomy Picture',
-        execute: () => {
-          if (!widget.isAttached) {
-            // Attach the widget to the main work area if it's not there
-            app.shell.add(widget, 'main');
-          }
-          // Refresh the picture in the widget
-          content.update();
-          // Activate the widget
-          app.shell.activateById(widget.id);
-        }
-      });
-
-      // Add the command to the palette.
-      palette.addItem({ command, category: 'Tutorial' });
-    }
-
-Remove the ``activate`` function definition from the
-``JupyterFrontEndPlugin`` object and refer instead to the top-level function
-like this:
-
-.. code-block:: typescript
-
-    const extension: JupyterFrontEndPlugin<void> = {
-      id: 'jupyterlab_apod',
-      autoStart: true,
-      requires: [ICommandPalette],
-      activate: activate
-    };
-
-Make sure you retain the ``export default extension;`` line in the file.
-Now build the extension again and refresh the JupyterLab browser tab.
-Run the *Random Astronomy Picture* command more than once without closing the
-panel. The picture should update each time you execute the command. Close
-the panel, run the command, and it should both reappear and show a new
-image.
-
-If anything is not working correctly, compare your code with the
-`04-refactor-and-refresh
-tag <https://github.com/jupyterlab/jupyterlab_apod/tree/3.0-04-refactor-and-refresh>`__
-to debug. Once it is working properly, commit it.
-
-.. code:: bash
-
-    git add package.json src/index.ts
-    git commit -m 'Refactor, refresh image'
-
-Restore panel state when the browser refreshes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-You may notice that every time you refresh your browser tab, the Astronomy Picture
-panel disappears, even if it was open before you refreshed. Other open
-panels, like notebooks, terminals, and text editors, all reappear and
-return to where you left them in the panel layout. You can make your
-extension behave this way too.
-
-Update the imports at the top of your ``index.ts`` file so that the
-entire list of import statements looks like the following:
-
-.. code-block:: typescript
-    :emphasize-lines: 2,10
-
-    import {
-      ILayoutRestorer,
-      JupyterFrontEnd,
-      JupyterFrontEndPlugin
-    } from '@jupyterlab/application';
-
-    import {
-      ICommandPalette,
-      MainAreaWidget,
-      WidgetTracker
-    } from '@jupyterlab/apputils';
-
-    import { Message } from '@lumino/messaging';
-
-    import { Widget } from '@lumino/widgets';
-
-Then add the ``ILayoutRestorer`` interface to the ``JupyterFrontEndPlugin``
-definition. This addition passes the global ``LayoutRestorer`` as the
-third parameter of the ``activate`` function.
-
-.. code-block:: typescript
-    :emphasize-lines: 4
-
-    const extension: JupyterFrontEndPlugin<void> = {
-      id: 'jupyterlab_apod',
-      autoStart: true,
-      requires: [ICommandPalette, ILayoutRestorer],
-      activate: activate
-    };
-
-Finally, rewrite the ``activate`` function so that it:
-
-1. Declares a widget variable, but does not create an instance
-   immediately.
-2. Constructs a ``WidgetTracker`` and tells the ``ILayoutRestorer``
-   to use it to save/restore panel state.
-3. Creates, tracks, shows, and refreshes the widget panel appropriately.
-
-.. code-block:: typescript
-
-    function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer) {
-      console.log('JupyterLab extension jupyterlab_apod is activated!');
-
-      // Declare a widget variable
-      let widget: MainAreaWidget<APODWidget>;
-
-      // Add an application command
-      const command: string = 'apod:open';
-      app.commands.addCommand(command, {
-        label: 'Random Astronomy Picture',
-        execute: () => {
-          if (!widget || widget.isDisposed) {
-            // Create a new widget if one does not exist
-            // or if the previous one was disposed after closing the panel
-            const content = new APODWidget();
-            widget = new MainAreaWidget({content});
-            widget.id = 'apod-jupyterlab';
-            widget.title.label = 'Astronomy Picture';
-            widget.title.closable = true;
-          }
-          if (!tracker.has(widget)) {
-            // Track the state of the widget for later restoration
-            tracker.add(widget);
-          }
-          if (!widget.isAttached) {
-            // Attach the widget to the main work area if it's not there
-            app.shell.add(widget, 'main');
-          }
-          widget.content.update();
-
-          // Activate the widget
-          app.shell.activateById(widget.id);
-        }
-      });
-
-      // Add the command to the palette.
-      palette.addItem({ command, category: 'Tutorial' });
-
-      // Track and restore the widget state
-      let tracker = new WidgetTracker<MainAreaWidget<APODWidget>>({
-        namespace: 'apod'
-      });
-      restorer.restore(tracker, {
-        command,
-        name: () => 'apod'
-      });
-    }
-
-Rebuild your extension one last time and refresh your browser tab.
-Execute the *Random Astronomy Picture* command and validate that the panel
-appears with an image in it. Refresh the browser tab again. You should
-see an Astronomy Picture panel reappear immediately without running the command. Close
-the panel and refresh the browser tab. You should then not see an Astronomy Picture tab
-after the refresh.
-
-.. figure:: extension_tutorial_complete.png
-   :align: center
-   :class: jp-screenshot
-   :alt: The completed extension, showing the Astronomy Picture of the Day for 24 Jul 2015.
-
-   The completed extension, showing the `Astronomy Picture of the Day for 24 Jul 2015 <https://apod.nasa.gov/apod/ap150724.html>`__.
-
-Refer to the `05-restore-panel-state
-tag <https://github.com/jupyterlab/jupyterlab_apod/tree/3.0-05-restore-panel-state>`__
-if your extension is not working correctly. Make a commit when the state of your
-extension persists properly.
-
-.. code:: bash
-
-    git add src/index.ts
-    git commit -m 'Restore panel state'
-
-Congratulations! You've implemented all of the behaviors laid out at the start
-of this tutorial.
+Make sure to check in your code, because you're done!
 
 .. _packaging your extension:
 
@@ -937,9 +529,9 @@ To create a Python wheel package (``.whl``) in the ``dist/`` directory, do:
     python setup.py bdist_wheel
 
 Both of these commands will build the JavaScript into a bundle in the
-``jupyterlab_apod/static`` directory, which is then distributed with the
+``tapis-v2-tenants-ext/static`` directory, which is then distributed with the
 Python package. This bundle will include any necessary JavaScript dependencies
-as well. You may want to check in the ``jupyterlab_apod/static`` directory to
+as well. You may want to check in the ``tapis-v2-tenants-ext/static`` directory to
 retain a record of what JavaScript is distributed in your package, or you may
 want to keep this "build artifact" out of your source repository history.
 
@@ -949,13 +541,13 @@ extension.
 
 .. code:: bash
 
-    conda create -n jupyterlab-apod jupyterlab
-    conda activate jupyterlab-apod
-    pip install jupyterlab_apod/dist/jupyterlab_apod-0.1.0-py3-none-any.whl
+    conda create -n tapis-v2-tenants-ext jupyterlab
+    conda activate tapis-v2-tenants-ext
+    pip install tapis-v2-tenants-ext/dist/tapis-v2-tenants-ext-0.1.0-py3-none-any.whl
     jupyter lab
 
 You should see a fresh JupyterLab browser tab appear. When it does,
-execute the *Random Astronomy Picture* command to check that your extension
+execute the *Tapis Tenants* command to check that your extension
 works.
 
 Publishing your extension
@@ -982,18 +574,3 @@ You may want to also publish your extension as a JavaScript package to the
    importing their tokens from the ``@jupyterlab/apputils`` and
    ``@jupyterlab/application`` npm packages and listing them in our plugin
    definition.
-
-Learn more
-~~~~~~~~~~
-
-You've completed the tutorial. Nicely done! If you want to keep
-learning, here are some suggestions about what to try next:
-
--  Add the image description that comes in the API response to the panel.
--  Assign a default hotkey to the *Random Astronomy Picture* command.
--  Make the image a link to the picture on the NASA website (URLs are of the form ``https://apod.nasa.gov/apod/apYYMMDD.html``).
--  Make the image title and description update after the image loads so that the picture and description are always synced.
--  Give users the ability to pin pictures in separate, permanent panels.
--  Add a setting for the user to put in their `API key <https://api.nasa.gov/#authentication>`__ so they can make many more requests per hour than the demo key allows.
--  Push your extension git repository to GitHub.
--  Learn how to write :ref:`other kinds of extensions <developer_extensions>`.
