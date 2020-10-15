@@ -1,16 +1,16 @@
 .. _extension_tutorial:
 
-Let's Make an Astronomy Picture of the Day JupyterLab Extension
+Let's Make a Tapis v2 Tenants JupyterLab Extension
 ----------------------------------------------------------------
 
 JupyterLab extensions add features to the user experience. This page
 describes how to create one type of extension, an *application plugin*,
 that:
 
--  Adds a "Random `Astronomy Picture <https://apod.nasa.gov/apod/astropix.html>`__" command to the
+-  Adds a "Tapis v2 Tenants" command to the
    *command palette* sidebar
--  Fetches the image and metadata when activated
--  Shows the image and metadata in a tab panel
+-  Fetches the metadata when activated
+-  Shows the metadata in a tab panel
 
 By working through this tutorial, you'll learn:
 
@@ -25,7 +25,7 @@ By working through this tutorial, you'll learn:
 .. figure:: extension_tutorial_complete.png
    :align: center
    :class: jp-screenshot
-   :alt: The completed extension, showing the Astronomy Picture of the Day for 24 Jul 2015.
+   :alt: The completed extension, displaying all Tapis v2 Tenants.
 
    The completed extension, showing the `Astronomy Picture of the Day for 24 Jul 2015 <https://apod.nasa.gov/apod/ap150724.html>`__.
 
@@ -59,22 +59,22 @@ Next create a conda environment that includes:
 It's a best practice to leave the root conda environment (i.e., the environment created
 by the miniconda installer) untouched and install your project-specific
 dependencies in a named conda environment. Run this command to create a
-new environment named ``jupyterlab-ext``.
+new environment named ``tapis-v2-tenants-ext``.
 
 .. code:: bash
 
-    conda create -n jupyterlab-ext --override-channels --strict-channel-priority -c conda-forge -c anaconda cookiecutter nodejs git
+    conda create -n tapis-v2-tenants-ext --override-channels --strict-channel-priority -c conda-forge -c anaconda cookiecutter nodejs git
 
 Now activate the new environment so that all further commands you run
 work out of that environment.
 
 .. code:: bash
 
-    conda activate jupyterlab-ext
+    conda activate tapis-v2-tenants-ext
 
 Note: You'll need to run the command above in each new terminal you open
 before you can work with the tools you installed in the
-``jupyterlab-ext`` environment.
+``tapis-v2-tenants-ext`` environment.
 
 Now we can install the latest version of JupyterLab.
 
@@ -110,9 +110,9 @@ are using to fetch pictures).
 ::
 
     author_name []: Your Name
-    python_name [myextension]: jupyterlab_apod
-    labextension_name [myextension]: jupyterlab_apod
-    project_short_description [A JupyterLab extension.]: Show a random NASA Astronomy Picture of the Day in a JupyterLab panel
+    python_name [myextension]: tapis-v2-tenants-ext
+    labextension_name [myextension]: tapis-v2-tenants-ext
+    project_short_description [A JupyterLab extension.]: Display Tapis v2 tenants api in a JupyterLab panel
     has_server_extension [n]: n
     has_binder [n]: y
     repository [https://github.com/my_name/myextension]: https://github.com/my_name/jupyterlab_apod
@@ -124,7 +124,7 @@ Change to the directory the cookiecutter created and list the files.
 
 .. code:: bash
 
-    cd jupyterlab_apod
+    cd tapis-v2-tenants-ext
     ls
 
 You should see a list like the following.
@@ -143,7 +143,7 @@ initialize it as a git repository and commit the current code.
 
     git init
     git add .
-    git commit -m 'Seed apod project from cookiecutter'
+    git commit -m 'Seed Tapis Tenants api extension project from cookiecutter'
 
 Note: This step is not technically necessary, but it is good practice to
 track changes in version control system in case you need to rollback to
@@ -184,7 +184,7 @@ default web browser.
 
 .. code:: bash
 
-    conda activate jupyterlab-ext
+    conda activate tapis-v2-tenants-ext
     jupyter lab
 
 In that browser window, open the JavaScript console
@@ -196,7 +196,7 @@ by following the instructions for your browser:
    Firefox <https://developer.mozilla.org/en-US/docs/Tools/Web_Console/Opening_the_Web_Console>`__
 
 After you reload the page with the console open, you should see a message that says
-``JupyterLab extension jupyterlab_apod is activated!`` in the console.
+``JupyterLab extension tapis-v2-tenants-ext is activated!`` in the console.
 If you do, congratulations, you're ready to start modifying the extension!
 If not, go back make sure you didn't miss a step, and `reach
 out <https://github.com/jupyterlab/jupyterlab/blob/master/README.md#getting-help>`__ if you're stuck.
@@ -205,7 +205,7 @@ Note: Leave the terminal running the ``jupyter lab`` command open and running
 JupyterLab to see the effects of changes below.
 
 
-Add an Astronomy Picture of the Day widget
+Add a Tapis v2 Tenants API widget
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Show an empty panel
@@ -213,8 +213,7 @@ Show an empty panel
 
 The *command palette* is the primary view of all commands available to
 you in JupyterLab. For your first addition, you're going to add a
-*Random Astronomy Picture* command to the palette and get it to show an *Astronomy Picture*
-tab panel when invoked.
+*Tapis v2 Tenants* command to the palette and get it to show a tab panel when invoked.
 
 Fire up your favorite text editor and open the ``src/index.ts`` file in your
 extension project. Change the import at the top of the file to get a reference
@@ -293,7 +292,7 @@ Note that we had to run ``jlpm run build`` in order for the bundle to
 update. This command does two things: compiles the TypeScript files in `src/`
 into JavaScript files in ``lib/`` (``jlpm run build``), then bundles the
 JavaScript files in ``lib/`` into a JupyterLab extension in
-``jupyterlab_apod/static`` (``jlpm run build:extension``). If you wish to avoid
+``tapis-v2-tenants-ext/static`` (``jlpm run build:extension``). If you wish to avoid
 running ``jlpm run build`` after each change, you can open a third terminal,
 activate the ``jupyterlab-ext`` environment, and run the ``jlpm run watch``
 command from your extension directory, which will automatically compile the
