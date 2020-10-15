@@ -27,7 +27,7 @@ By working through this tutorial, you'll learn:
    :class: jp-screenshot
    :alt: The completed extension, displaying all Tapis v2 Tenants.
 
-   The completed extension, showing the `Astronomy Picture of the Day for 24 Jul 2015 <https://apod.nasa.gov/apod/ap150724.html>`__.
+   The completed extension, displaying all Tapis v2 Tenants.
 
 Sound like fun? Excellent. Here we go!
 
@@ -179,7 +179,7 @@ See the initial extension in action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 After the install completes, open a second terminal. Run these commands to
-activate the ``jupyterlab-ext`` environment and start JupyterLab in your
+activate the ``tapis-v2-tenants-ext`` environment and start JupyterLab in your
 default web browser.
 
 .. code:: bash
@@ -237,11 +237,11 @@ definition so that it reads like so:
      * Initialization data for the jupyterlab_apod extension.
      */
     const extension: JupyterFrontEndPlugin<void> = {
-      id: 'jupyterlab-apod',
+      id: 'tapis-v2-tenants-ext',
       autoStart: true,
       requires: [ICommandPalette],
       activate: (app: JupyterFrontEnd, palette: ICommandPalette) => {
-        console.log('JupyterLab extension jupyterlab_apod is activated!');
+        console.log('JupyterLab extension tapis-v2-tenants-ext is activated!');
         console.log('ICommandPalette:', palette);
       }
     };
@@ -285,7 +285,7 @@ build command for errors and correct your code.
 
 ::
 
-    JupyterLab extension jupyterlab_apod is activated!
+    JupyterLab extension tapis-v2-tenants-ext is activated!
     ICommandPalette: Palette {_palette: CommandPalette}
 
 Note that we had to run ``jlpm run build`` in order for the bundle to
@@ -294,7 +294,7 @@ into JavaScript files in ``lib/`` (``jlpm run build``), then bundles the
 JavaScript files in ``lib/`` into a JupyterLab extension in
 ``tapis-v2-tenants-ext/static`` (``jlpm run build:extension``). If you wish to avoid
 running ``jlpm run build`` after each change, you can open a third terminal,
-activate the ``jupyterlab-ext`` environment, and run the ``jlpm run watch``
+activate the ``tapis-v2-tenants-ext`` environment, and run the ``jlpm run watch``
 command from your extension directory, which will automatically compile the
 TypeScript files as they are changed and saved.
 
@@ -322,36 +322,61 @@ code:
       activate: (app: JupyterFrontEnd, palette: ICommandPalette) => {
         console.log('JupyterLab extension jupyterlab_apod is activated!');
 
-        // Create a blank content widget inside of a MainAreaWidget
+        //Create a blank content widget inside of a MainAreaWidget
         const content = new Widget();
-        const widget = new MainAreaWidget({ content });
-        widget.id = 'apod-jupyterlab';
-        widget.title.label = 'Astronomy Picture';
+        content.addClass('tapis-v2-tenants-widget');
+        const widget = new MainAreaWidget({content});
+        widget.id = 'tapis-v2-tenants';
+        widget.title.label = 'Tapis Tenants';
         widget.title.closable = true;
-
-        // Add an application command
-        const command: string = 'apod:open';
+        
+        let header = document.createElement('h1');
+        header.innerText = "Tapis v2 Tenants API";
+        content.node.appendChild(header);
+    
+        let summary = document.createElement('table');
+        content.node.appendChild(summary);
+    
+        const response = await fetch(`https://api.tacc.utexas.edu/tenants/`);
+        if (!response.ok) {
+          const data = await response.json();
+          if (data.error) {
+            summary.innerText = data.error.message;
+          } else {
+            summary.innerText = response.statusText;
+          }
+        } else {
+          const data = await response.json() as TenantsResponse;
+          summary.innerHTML = '<tr><td>Tenant</td><td>Base URL</td><td>Code</td></tr>'
+          data.result.forEach(function (value) {
+            summary.innerHTML += '<tr><td>' + value.name + '</td><td>' + value.baseUrl + '</td><td>' + value.code + '</td></tr>';
+          });
+        }
+    
+    
+        //Add an application command
+        const command: string = 'tenants:open';
         app.commands.addCommand(command, {
-          label: 'Random Astronomy Picture',
+          label: 'Tapis Tenants',
           execute: () => {
             if (!widget.isAttached) {
-              // Attach the widget to the main work area if it's not there
+              //Attach the widget to the main work area if it's not there
               app.shell.add(widget, 'main');
-            }
-            // Activate the widget
-            app.shell.activateById(widget.id);
+              }
+    
+              //Activate the widget
+              app.shell.activateById(widget.id);
           }
         });
-
-        // Add the command to the palette.
-        palette.addItem({ command, category: 'Tutorial' });
+        palette.addItem({command, category: 'Tapis Studio'});
       }
+
 
 The first new block of code creates a ``MainAreaWidget`` instance with an
 empty content ``Widget`` as its child. It also assigns the main area widget a
 unique ID, gives it a label that will appear as its tab title, and makes the
 tab closable by the user. The second block of code adds a new command with id
-``apod:open`` and label *Random Astronomy Picture* to JupyterLab. When the
+``tenants:open`` and label *Tapis Tenants* to JupyterLab. When the
 command executes, it attaches the widget to the main display area if it is not
 already present and then makes it the active tab. The last new line of code
 uses the command id to add the command to the command palette in a section
@@ -359,14 +384,14 @@ called *Tutorial*.
 
 Build your extension again using ``jlpm run build`` (unless you are using
 ``jlpm run watch`` already) and refresh the browser tab. Open the command
-palette on the left side by clicking on *Commands* and type *Astronomy* in the
-search box. Your *Random Astronomy Picture* command should appear. Click it or
+palette by clicking on *view* and then *Activate Command Palette* and type *Tapis* in the
+search box. Your *Tapis Tenants* command should appear. Click it or
 select it with the keyboard and press *Enter*. You should see a new, blank
-panel appear with the tab title *Astronomy Picture*. Click the *x* on the tab
+panel appear with the tab title *Tapis Tenants*. Click the *x* on the tab
 to close it and activate the command again. The tab should reappear. Finally,
-click one of the launcher tabs so that the *Astronomy Picture* panel is still
-open but no longer active. Now run the *Random Astronomy Picture* command one
-more time. The single *Astronomy Picture* tab should come to the foreground.
+click one of the launcher tabs so that the *Tapis Tenants* panel is still
+open but no longer active. Now run the *Tapis Tenants* command one
+more time. The single *Tapis Tenants* tab should come to the foreground.
 
 .. figure:: extension_tutorial_empty.png
    :align: center
